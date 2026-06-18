@@ -30,6 +30,8 @@
   let audioCtx = null;
   let currentVoice = null;
   let pressPlayTimer = null;
+  const introInstruction = 'Press Start to get started. Then press Play. Match three of the same tiles for a chance to win your reward.';
+  const playInstruction = 'Press Play. Match three of the same tiles for a chance to win your reward.';
 
   document.addEventListener('DOMContentLoaded', start);
 
@@ -56,7 +58,7 @@
     nodes.soundToggle.onclick = () => { state.sound = !state.sound; save(); draw(); say(state.sound ? 'Sound is on.' : 'Sound is off.'); };
     nodes.speechToggle.onclick = () => { state.speech = !state.speech; stopVoice(); stopPressPlayLoop(); if (!state.speech && 'speechSynthesis' in window) speechSynthesis.cancel(); save(); draw(); say(state.speech ? 'Game voice is on.' : 'Game voice is off. Screen reader text will still update.'); if (state.speech && state.started) startPressPlayLoop(1200); };
     draw();
-    updateLive('Press Start to get started. Then press Play for a chance to win your reward.', false);
+    updateLive(introInstruction, false);
   }
 
   function handleMainButton(event) {
@@ -77,11 +79,11 @@
       updateLive('Welcome to CFLY Rewards. Let’s see what you unlock today.', true);
       await playClipAndWait('welcome', 'Welcome to CFLY Rewards. Let’s see what you unlock today.', true, 3300);
       await wait(700);
-      updateLive('Press play for a chance to win your reward.', true);
-      await playClipAndWait('pressPlay', 'Press play for a chance to win your reward.', true, 2300);
+      updateLive(playInstruction, true);
+      await playClipAndWait('pressPlay', playInstruction, true, 2300);
       state.started = true;
-      result('Ready. Press Play for a chance to win your reward.');
-      if (nodes.instructions) nodes.instructions.textContent = 'Press Play for a chance to win your reward.';
+      result('Ready. ' + playInstruction);
+      if (nodes.instructions) nodes.instructions.textContent = playInstruction;
     } finally {
       state.busy = false;
       save();
@@ -149,7 +151,7 @@
     if (!state.started || state.done || state.busy || left() <= 0 || !state.speech) return;
     pressPlayTimer = setTimeout(() => {
       if (!state.started || state.done || state.busy || left() <= 0 || !state.speech) return;
-      updateLive('Press Play for a chance to win your reward.');
+      updateLive(playInstruction);
       playClip('pressPlay', '', false);
       startPressPlayLoop(cfg.remindEvery);
     }, delay);
