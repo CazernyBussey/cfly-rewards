@@ -1,8 +1,8 @@
 (() => {
   const cfg = {
-    key: 'cfly-rewards-we-in-here-2026-06-v4',
+    key: 'cfly-rewards-we-in-here-2026-06-v5',
     max: 7,
-    delay: 900,
+    tileVoiceFallbackMs: 3600,
     remindEvery: 6500,
     claimForm: 'https://form.jotform.com/261680287069062',
     voice: {
@@ -10,7 +10,6 @@
       pressPlay: './assets/voice/02-press-play.mp3',
       tilesMoving: './assets/voice/03-tiles-moving.mp3',
       notThisTime: './assets/voice/07-not-this-time.mp3',
-      lastPlay: './assets/voice/08-last-play.mp3',
       rewardUnlocked: './assets/voice/09-reward-unlocked.mp3',
       cflyTag: './assets/voice/10-cfly-tag.mp3'
     },
@@ -24,13 +23,10 @@
     ]
   };
 
-  const $ = (id) => document.getElementById(id);
+  const $ = id => document.getElementById(id);
   const nodes = {};
   let state = { day: dayKey(), used: 0, done: false, busy: false, sound: true, speech: true, history: [] };
-  let audioCtx;
-  let currentVoice;
-  let pressPlayTimer;
-  let userInteracted = false;
+  let audioCtx, currentVoice, pressPlayTimer;
 
   document.addEventListener('DOMContentLoaded', start);
 
@@ -44,20 +40,19 @@
     nodes.downloadLink.href = cfg.claimForm;
     nodes.downloadLink.target = '_blank';
     nodes.downloadLink.rel = 'noopener';
-    nodes.shareLink.href = `https://twitter.com/intent/tweet?text=${encodeURIComponent('I just played CFLY Rewards by Cazerny Bussey.')}&url=${encodeURIComponent(location.href)}`;
+    nodes.shareLink.href = location.href;
     nodes.playButton.addEventListener('click', play);
-    nodes.soundToggle.addEventListener('click', () => { userInteracted = true; state.sound = !state.sound; save(); draw(); say(state.sound ? 'Sound is on.' : 'Sound is off.'); if (state.sound && state.speech) startPressPlayLoop(1200); });
-    nodes.speechToggle.addEventListener('click', () => { userInteracted = true; state.speech = !state.speech; stopVoice(); stopPressPlayLoop(); if (!state.speech && speechSynthesis) speechSynthesis.cancel(); save(); draw(); say(state.speech ? 'Game voice is on.' : 'Game voice is off. Screen reader text will still update.'); if (state.speech) startPressPlayLoop(1200); });
+    nodes.soundToggle.addEventListener('click', () => { state.sound = !state.sound; save(); draw(); say(state.sound ? 'Sound is on.' : 'Sound is off.'); if (state.sound && state.speech) startPressPlayLoop(1200); });
+    nodes.speechToggle.addEventListener('click', () => { state.speech = !state.speech; stopVoice(); stopPressPlayLoop(); if (!state.speech && speechSynthesis) speechSynthesis.cancel(); save(); draw(); say(state.speech ? 'Game voice is on.' : 'Game voice is off. Screen reader text will still update.'); if (state.speech) startPressPlayLoop(1200); });
     draw();
     say('Welcome to CFLY Rewards. Let’s see what you unlock today.', true, false, 'welcome');
     startPressPlayLoop(3200);
   }
 
   async function play() {
-    userInteracted = true;
     stopPressPlayLoop();
     if (state.busy) return;
-    if (state.done) { openPanel(); say('Your reward is already unlocked. CFLY forever loves you.', true, false, 'cflyTag'); return; }
+    if (state.done) { openPanel(); playClip('cflyTag', 'Your reward is already unlocked. CFLY forever loves you.'); return; }
     if (left() <= 0) { result('Your plays are finished for today. Come back tomorrow.'); say('Your plays are finished for today. Come back tomorrow.', true, true); tone('low'); return; }
 
     state.busy = true;
@@ -67,16 +62,13 @@
 
     moving(true);
     result('The tiles are moving.');
-    say('The tiles are moving. Let’s see what you get.', true, false, 'tilesMoving');
+    updateLive('The tiles are moving. Let’s see what you get.');
     tone('start');
 
-    await wait(cfg.delay);
+    await playClipAndWait('tilesMoving', 'The tiles are moving. Let’s see what you get.', true, cfg.tileVoiceFallbackMs);
+
     const picked = build(left() === 0 && !state.done);
-    for (let i = 0; i < 3; i++) {
-      setTile(i, picked[i]);
-      tone('tick');
-      await wait(180);
-    }
+    for (let i = 0; i < 3; i++) { setTile(i, picked[i]); tone('tick'); await wait(180); }
     moving(false);
 
     const ok = picked.every(x => x[0] === picked[0][0]) && picked[0][3];
@@ -88,22 +80,20 @@
       result(`You matched three ${picked[0][1]} tiles. CFLY! Enter your email to claim your reward.`);
       tone('high');
       openPanel();
-      say('CFLY! You matched three. Enter your email to claim your reward.', true, true, 'rewardUnlocked');
-      setTimeout(() => { if (state.speech) playClip('cflyTag'); }, 1600);
+      updateLive('CFLY! You matched three. Enter your email to claim your reward.', true);
+      playClip('rewardUnlocked', 'CFLY! You matched three. Enter your email to claim your reward.', true, () => setTimeout(() => playClip('cflyTag'), 250));
     } else {
       result(`Not this time. Run it back. You have ${left()} ${left() === 1 ? 'play' : 'plays'} left today.`);
       tone('low');
-      playClip('notThisTime', 'Not this time. Run it back.', true, () => {
-        if (!state.done && left() > 0) startPressPlayLoop(700);
-      });
-      updateLive('Not this time. Run it back.', false);
+      updateLive('Not this time. Run it back.');
+      await playClipAndWait('notThisTime', 'Not this time. Run it back.', true, 1800);
     }
 
     state.busy = false;
     save();
     draw();
     nodes.visibleResult.focus({ preventScroll: false });
-    if (!state.done && left() > 0) startPressPlayLoop(2600);
+    if (!state.done && left() > 0) startPressPlayLoop(900);
   }
 
   function startPressPlayLoop(delay=0) {
@@ -111,31 +101,32 @@
     if (state.done || state.busy || left() <= 0 || !state.speech) return;
     pressPlayTimer = setTimeout(() => {
       if (state.done || state.busy || left() <= 0 || !state.speech) return;
-      updateLive('Press play when you are ready.', false);
+      updateLive('Press play when you are ready.');
       playClip('pressPlay', '', false);
       startPressPlayLoop(cfg.remindEvery);
     }, delay);
   }
-  function stopPressPlayLoop() { if (pressPlayTimer) { clearTimeout(pressPlayTimer); pressPlayTimer = null; } }
-  function build(force) { if (force) { const one = pick(cfg.items.filter(x => x[3])); return [one, one, one]; } return [pick(cfg.items), pick(cfg.items), pick(cfg.items)]; }
-  function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
-  function setTile(i, item) { const n = nodes.tiles[i]; n.querySelector('.tile-emoji').textContent = item[2]; n.querySelector('.tile-label').textContent = item[1]; n.dataset.tile = item[0]; n.setAttribute('aria-label', `Tile ${i+1}: ${item[1]}`); }
-  function moving(on) { nodes.tiles.forEach(n => { n.classList.toggle('moving', on); if (on) { const s = pick(cfg.items); n.querySelector('.tile-emoji').textContent = s[2]; n.querySelector('.tile-label').textContent = 'Moving'; } }); }
-  function openPanel() { nodes.downloadPanel.hidden = false; nodes.downloadPanel.classList.add('download-visible'); }
-  function result(text) { nodes.visibleResult.textContent = text; }
-  function draw() { nodes.triesLeftDisplay.textContent = left(); nodes.downloadStatusDisplay.textContent = state.done ? 'Claim Ready' : 'Locked'; nodes.soundStatusDisplay.textContent = state.sound ? 'On' : 'Off'; nodes.playButton.disabled = state.busy || state.done || left() <= 0; nodes.playButton.textContent = state.done ? 'Reward Ready' : left() <= 0 ? 'No Plays Left' : 'Play'; nodes.soundToggle.textContent = state.sound ? 'Turn Sound Off' : 'Turn Sound On'; nodes.speechToggle.textContent = state.speech ? 'Turn Game Voice Off' : 'Turn Game Voice On'; history(); if (state.done) openPanel(); }
-  function history() { nodes.playHistory.innerHTML = ''; if (!state.history.length) { const li = document.createElement('li'); li.textContent = 'No plays yet.'; nodes.playHistory.appendChild(li); return; } state.history.forEach(h => { const li = document.createElement('li'); li.textContent = `${h.ok ? 'Matched' : 'No match'}: ${h.labels.join(', ')}.`; nodes.playHistory.appendChild(li); }); }
-  function updateLive(text, urgent=false) {
-    const region = urgent ? nodes.assertiveRegion : nodes.liveRegion;
-    region.textContent = '';
-    setTimeout(() => region.textContent = text, 20);
+
+  function playClipAndWait(name, fallbackText='', allowFallback=true, fallbackMs=2500) {
+    if (!state.speech) return wait(fallbackMs);
+    const src = cfg.voice[name];
+    if (!src) { if (allowFallback) fallbackSpeech(fallbackText); return wait(fallbackMs); }
+    return new Promise(resolve => {
+      let done = false;
+      const finish = () => { if (!done) { done = true; resolve(); } };
+      try {
+        stopVoice();
+        currentVoice = new Audio(src);
+        currentVoice.volume = 1;
+        currentVoice.addEventListener('ended', finish, { once: true });
+        currentVoice.addEventListener('error', () => { if (allowFallback) fallbackSpeech(fallbackText); setTimeout(finish, fallbackMs); }, { once: true });
+        const p = currentVoice.play();
+        if (p && p.catch) p.catch(() => { if (allowFallback) fallbackSpeech(fallbackText); setTimeout(finish, fallbackMs); });
+        setTimeout(finish, Math.max(fallbackMs, 5200));
+      } catch(e) { if (allowFallback) fallbackSpeech(fallbackText); setTimeout(finish, fallbackMs); }
+    });
   }
-  function say(text, voice=false, urgent=false, clip=null) {
-    updateLive(text, urgent);
-    if (!voice || !state.speech) return;
-    if (clip) { playClip(clip, text, true); return; }
-    fallbackSpeech(text);
-  }
+
   function playClip(name, fallbackText='', allowFallback=true, onEnded=null) {
     const src = cfg.voice[name];
     if (!src) { if (allowFallback) fallbackSpeech(fallbackText); return; }
@@ -144,10 +135,21 @@
       currentVoice = new Audio(src);
       currentVoice.volume = 1;
       if (onEnded) currentVoice.addEventListener('ended', onEnded, { once: true });
-      const playPromise = currentVoice.play();
-      if (playPromise && playPromise.catch) playPromise.catch(() => { if (allowFallback) fallbackSpeech(fallbackText); });
+      const p = currentVoice.play();
+      if (p && p.catch) p.catch(() => { if (allowFallback) fallbackSpeech(fallbackText); });
     } catch(e) { if (allowFallback) fallbackSpeech(fallbackText); }
   }
+
+  function build(force) { if (force) { const one = pick(cfg.items.filter(x => x[3])); return [one, one, one]; } return [pick(cfg.items), pick(cfg.items), pick(cfg.items)]; }
+  function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+  function setTile(i, item) { const n = nodes.tiles[i]; n.querySelector('.tile-emoji').textContent = item[2]; n.querySelector('.tile-label').textContent = item[1]; n.dataset.tile = item[0]; n.setAttribute('aria-label', `Tile ${i+1}: ${item[1]}`); }
+  function moving(on) { nodes.tiles.forEach(n => { n.classList.toggle('moving', on); if (on) { const s = pick(cfg.items); n.querySelector('.tile-emoji').textContent = s[2]; n.querySelector('.tile-label').textContent = 'Moving'; } }); }
+  function openPanel() { nodes.downloadPanel.hidden = false; nodes.downloadPanel.classList.add('download-visible'); }
+  function result(text) { nodes.visibleResult.textContent = text; }
+  function draw() { nodes.triesLeftDisplay.textContent = left(); nodes.downloadStatusDisplay.textContent = state.done ? 'Claim Ready' : 'Locked'; nodes.soundStatusDisplay.textContent = state.sound ? 'On' : 'Off'; nodes.playButton.disabled = state.busy || state.done || left() <= 0; nodes.playButton.textContent = state.done ? 'Reward Ready' : left() <= 0 ? 'No Plays Left' : 'Play'; nodes.soundToggle.textContent = state.sound ? 'Turn Sound Off' : 'Turn Sound On'; nodes.speechToggle.textContent = state.speech ? 'Turn Game Voice Off' : 'Turn Game Voice On'; history(); if (state.done) openPanel(); }
+  function history() { nodes.playHistory.innerHTML = ''; if (!state.history.length) { const li = document.createElement('li'); li.textContent = 'No plays yet.'; nodes.playHistory.appendChild(li); return; } state.history.forEach(h => { const li = document.createElement('li'); li.textContent = `${h.ok ? 'Matched' : 'No match'}: ${h.labels.join(', ')}.`; nodes.playHistory.appendChild(li); }); }
+  function updateLive(text, urgent=false) { const region = urgent ? nodes.assertiveRegion : nodes.liveRegion; region.textContent = ''; setTimeout(() => region.textContent = text, 20); }
+  function say(text, voice=false, urgent=false, clip=null) { updateLive(text, urgent); if (!voice || !state.speech) return; if (clip) { playClip(clip, text, true); return; } fallbackSpeech(text); }
   function fallbackSpeech(text) { if (!text || !('speechSynthesis' in window)) return; speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.rate=.94; speechSynthesis.speak(u); }
   function stopVoice() { try { if (currentVoice) { currentVoice.pause(); currentVoice.currentTime = 0; } } catch(e) {} }
   function tone(kind) { if (!state.sound) return; try { const C = window.AudioContext || window.webkitAudioContext; if (!C) return; audioCtx = audioCtx || new C(); if (audioCtx.state === 'suspended') audioCtx.resume(); const now = audioCtx.currentTime, g = audioCtx.createGain(), o = audioCtx.createOscillator(); const map = { start:[180,.16,.07], tick:[520,.08,.06], high:[880,.42,.09], low:[170,.18,.05] }; const [f,d,v] = map[kind] || map.tick; o.type = kind === 'high' ? 'triangle' : 'sine'; o.frequency.setValueAtTime(f, now); g.gain.setValueAtTime(.0001, now); g.gain.exponentialRampToValueAtTime(v, now+.02); g.gain.exponentialRampToValueAtTime(.0001, now+d); o.connect(g); g.connect(audioCtx.destination); o.start(now); o.stop(now+d+.02); } catch(e) {} }
