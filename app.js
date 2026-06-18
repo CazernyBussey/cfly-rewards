@@ -1,8 +1,9 @@
 (() => {
   const cfg = {
-    key: 'cfly-rewards-we-in-here-2026-06-v2',
+    key: 'cfly-rewards-we-in-here-2026-06-v3',
     max: 7,
     delay: 900,
+    remindEvery: 6500,
     claimForm: 'https://form.jotform.com/261680287069062',
     voice: {
       welcome: './assets/voice/01-welcome.mp3',
@@ -28,6 +29,7 @@
   let state = { day: dayKey(), used: 0, done: false, busy: false, sound: true, speech: true, history: [] };
   let audioCtx;
   let currentVoice;
+  let pressPlayTimer;
 
   document.addEventListener('DOMContentLoaded', start);
 
@@ -43,14 +45,15 @@
     nodes.downloadLink.rel = 'noopener';
     nodes.shareLink.href = `https://twitter.com/intent/tweet?text=${encodeURIComponent('I just played CFLY Rewards by Cazerny Bussey.')}&url=${encodeURIComponent(location.href)}`;
     nodes.playButton.addEventListener('click', play);
-    nodes.soundToggle.addEventListener('click', () => { state.sound = !state.sound; save(); draw(); say(state.sound ? 'Sound is on.' : 'Sound is off.'); });
-    nodes.speechToggle.addEventListener('click', () => { state.speech = !state.speech; stopVoice(); if (!state.speech && speechSynthesis) speechSynthesis.cancel(); save(); draw(); say(state.speech ? 'Game voice is on.' : 'Game voice is off. Screen reader text will still update.'); });
+    nodes.soundToggle.addEventListener('click', () => { state.sound = !state.sound; save(); draw(); say(state.sound ? 'Sound is on.' : 'Sound is off.'); if (state.sound && state.speech) startPressPlayLoop(1200); });
+    nodes.speechToggle.addEventListener('click', () => { state.speech = !state.speech; stopVoice(); stopPressPlayLoop(); if (!state.speech && speechSynthesis) speechSynthesis.cancel(); save(); draw(); say(state.speech ? 'Game voice is on.' : 'Game voice is off. Screen reader text will still update.'); if (state.speech) startPressPlayLoop(1200); });
     draw();
     say('Welcome to CFLY Rewards. Let’s see what you unlock today.', true, false, 'welcome');
-    setTimeout(() => { if (!state.done && left() > 0 && !state.busy) say('Press play when you are ready.', true, false, 'pressPlay'); }, 2300);
+    startPressPlayLoop(3200);
   }
 
   async function play() {
+    stopPressPlayLoop();
     if (state.busy) return;
     if (state.done) { openPanel(); say('Your reward is already unlocked. CFLY forever loves you.', true, false, 'cflyTag'); return; }
     if (left() <= 0) { result('Your plays are finished for today. Come back tomorrow.'); say('Your plays are finished for today. Come back tomorrow.', true, true); tone('low'); return; }
@@ -95,8 +98,19 @@
     save();
     draw();
     nodes.visibleResult.focus({ preventScroll: false });
+    if (!state.done && left() > 0) startPressPlayLoop(2600);
   }
 
+  function startPressPlayLoop(delay=0) {
+    stopPressPlayLoop();
+    if (state.done || state.busy || left() <= 0 || !state.speech) return;
+    pressPlayTimer = setTimeout(() => {
+      if (state.done || state.busy || left() <= 0 || !state.speech) return;
+      say('Press play when you are ready.', true, false, 'pressPlay');
+      startPressPlayLoop(cfg.remindEvery);
+    }, delay);
+  }
+  function stopPressPlayLoop() { if (pressPlayTimer) { clearTimeout(pressPlayTimer); pressPlayTimer = null; } }
   function build(force) { if (force) { const one = pick(cfg.items.filter(x => x[3])); return [one, one, one]; } return [pick(cfg.items), pick(cfg.items), pick(cfg.items)]; }
   function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
   function setTile(i, item) { const n = nodes.tiles[i]; n.querySelector('.tile-emoji').textContent = item[2]; n.querySelector('.tile-label').textContent = item[1]; n.dataset.tile = item[0]; n.setAttribute('aria-label', `Tile ${i+1}: ${item[1]}`); }
