@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>CFLY Rewards</title>
 <style>
 body{margin:0;background:#111;color:#fff;font-family:Arial,Helvetica,sans-serif;line-height:1.5}.app-shell{width:min(100% - 2rem,900px);margin:auto;padding:2rem 0}.hero{text-align:center}.brand-logo{display:block;width:min(260px,80vw);height:auto;margin:0 auto 1rem}h1{font-size:clamp(2.5rem,8vw,5rem);margin:.2rem 0}.edition{color:#ffd166;font-weight:800}.card{background:#1d1d1d;border:1px solid #444;border-radius:18px;padding:1rem;margin-top:1rem}.status{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}.tile-machine{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin:2rem 0}.tile{min-height:8rem;display:flex;flex-direction:column;align-items:center;justify-content:center;border:3px solid #555;border-radius:18px;background:#101010;text-align:center}.tile-emoji{font-size:4rem}.tile-label{font-weight:800}.tile.moving .tile-emoji{animation:pulse .16s linear infinite}.primary-button,.secondary-button,.primary-link,.secondary-link{display:inline-flex;align-items:center;justify-content:center;min-height:3rem;padding:.8rem 1rem;border-radius:999px;font-weight:900;text-decoration:none}.primary-button,.primary-link{background:#ffd166;color:#111;border:0}.secondary-button,.secondary-link{background:#333;color:#fff;border:1px solid #666}.result-line{background:#2a2a2a;padding:1rem;border-radius:16px;font-weight:700}.download-panel{margin-top:1rem;border:2px solid #ffd166;background:#332b12;border-radius:18px;padding:1rem}.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}@keyframes pulse{from{transform:translateY(-5%)}to{transform:translateY(5%)}}@media(max-width:720px){.status,.tile-machine{grid-template-columns:1fr}.primary-button,.secondary-button,.primary-link,.secondary-link{width:100%;margin-top:.5rem}}
@@ -16,6 +19,6 @@ body{margin:0;background:#111;color:#fff;font-family:Arial,Helvetica,sans-serif;
 <section class="card"><h2>Accessibility built in</h2><p>Keyboard play, screen reader announcements, reduced motion support, and spoken updates are included.</p></section><section class="card"><h2>Recent plays</h2><ol id="playHistory"></ol></section><footer><p>CFLY means Cazerny Forever Loves You.</p></footer>
 </main>
 <div class="sr-only" id="liveRegion" aria-live="polite" aria-atomic="true"></div><div class="sr-only" id="assertiveRegion" aria-live="assertive" aria-atomic="true"></div>
-<script>fetch('./assets/images/cfly-logo-data-uri.txt').then(r=>r.text()).then(src=>{const logo=document.getElementById('brandLogo');if(logo)logo.src=src.trim();}).catch(()=>{});</script><script src="./app.js"></script>
+<script>fetch('./assets/images/cfly-logo-data-uri.txt?v=7').then(r=>r.text()).then(src=>{const logo=document.getElementById('brandLogo');if(logo)logo.src=src.trim();}).catch(()=>{});</script><script src="./app.js?v=7"></script>
 </body>
 </html>
