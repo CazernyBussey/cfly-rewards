@@ -1,6 +1,6 @@
 (() => {
   const cfg = {
-    key: 'cfly-rewards-we-in-here-2026-06-v3',
+    key: 'cfly-rewards-we-in-here-2026-06-v4',
     max: 7,
     delay: 900,
     remindEvery: 6500,
@@ -30,6 +30,7 @@
   let audioCtx;
   let currentVoice;
   let pressPlayTimer;
+  let userInteracted = false;
 
   document.addEventListener('DOMContentLoaded', start);
 
@@ -45,14 +46,15 @@
     nodes.downloadLink.rel = 'noopener';
     nodes.shareLink.href = `https://twitter.com/intent/tweet?text=${encodeURIComponent('I just played CFLY Rewards by Cazerny Bussey.')}&url=${encodeURIComponent(location.href)}`;
     nodes.playButton.addEventListener('click', play);
-    nodes.soundToggle.addEventListener('click', () => { state.sound = !state.sound; save(); draw(); say(state.sound ? 'Sound is on.' : 'Sound is off.'); if (state.sound && state.speech) startPressPlayLoop(1200); });
-    nodes.speechToggle.addEventListener('click', () => { state.speech = !state.speech; stopVoice(); stopPressPlayLoop(); if (!state.speech && speechSynthesis) speechSynthesis.cancel(); save(); draw(); say(state.speech ? 'Game voice is on.' : 'Game voice is off. Screen reader text will still update.'); if (state.speech) startPressPlayLoop(1200); });
+    nodes.soundToggle.addEventListener('click', () => { userInteracted = true; state.sound = !state.sound; save(); draw(); say(state.sound ? 'Sound is on.' : 'Sound is off.'); if (state.sound && state.speech) startPressPlayLoop(1200); });
+    nodes.speechToggle.addEventListener('click', () => { userInteracted = true; state.speech = !state.speech; stopVoice(); stopPressPlayLoop(); if (!state.speech && speechSynthesis) speechSynthesis.cancel(); save(); draw(); say(state.speech ? 'Game voice is on.' : 'Game voice is off. Screen reader text will still update.'); if (state.speech) startPressPlayLoop(1200); });
     draw();
     say('Welcome to CFLY Rewards. Let’s see what you unlock today.', true, false, 'welcome');
     startPressPlayLoop(3200);
   }
 
   async function play() {
+    userInteracted = true;
     stopPressPlayLoop();
     if (state.busy) return;
     if (state.done) { openPanel(); say('Your reward is already unlocked. CFLY forever loves you.', true, false, 'cflyTag'); return; }
@@ -91,7 +93,10 @@
     } else {
       result(`Not this time. Run it back. You have ${left()} ${left() === 1 ? 'play' : 'plays'} left today.`);
       tone('low');
-      say('Not this time. Run it back.', true, false, 'notThisTime');
+      playClip('notThisTime', 'Not this time. Run it back.', true, () => {
+        if (!state.done && left() > 0) startPressPlayLoop(700);
+      });
+      updateLive('Not this time. Run it back.', false);
     }
 
     state.busy = false;
@@ -106,7 +111,8 @@
     if (state.done || state.busy || left() <= 0 || !state.speech) return;
     pressPlayTimer = setTimeout(() => {
       if (state.done || state.busy || left() <= 0 || !state.speech) return;
-      say('Press play when you are ready.', true, false, 'pressPlay');
+      updateLive('Press play when you are ready.', false);
+      playClip('pressPlay', '', false);
       startPressPlayLoop(cfg.remindEvery);
     }, delay);
   }
@@ -119,24 +125,28 @@
   function result(text) { nodes.visibleResult.textContent = text; }
   function draw() { nodes.triesLeftDisplay.textContent = left(); nodes.downloadStatusDisplay.textContent = state.done ? 'Claim Ready' : 'Locked'; nodes.soundStatusDisplay.textContent = state.sound ? 'On' : 'Off'; nodes.playButton.disabled = state.busy || state.done || left() <= 0; nodes.playButton.textContent = state.done ? 'Reward Ready' : left() <= 0 ? 'No Plays Left' : 'Play'; nodes.soundToggle.textContent = state.sound ? 'Turn Sound Off' : 'Turn Sound On'; nodes.speechToggle.textContent = state.speech ? 'Turn Game Voice Off' : 'Turn Game Voice On'; history(); if (state.done) openPanel(); }
   function history() { nodes.playHistory.innerHTML = ''; if (!state.history.length) { const li = document.createElement('li'); li.textContent = 'No plays yet.'; nodes.playHistory.appendChild(li); return; } state.history.forEach(h => { const li = document.createElement('li'); li.textContent = `${h.ok ? 'Matched' : 'No match'}: ${h.labels.join(', ')}.`; nodes.playHistory.appendChild(li); }); }
-  function say(text, voice=false, urgent=false, clip=null) {
+  function updateLive(text, urgent=false) {
     const region = urgent ? nodes.assertiveRegion : nodes.liveRegion;
-    region.textContent='';
-    setTimeout(()=>region.textContent=text,20);
+    region.textContent = '';
+    setTimeout(() => region.textContent = text, 20);
+  }
+  function say(text, voice=false, urgent=false, clip=null) {
+    updateLive(text, urgent);
     if (!voice || !state.speech) return;
-    if (clip) { playClip(clip, text); return; }
+    if (clip) { playClip(clip, text, true); return; }
     fallbackSpeech(text);
   }
-  function playClip(name, fallbackText='') {
+  function playClip(name, fallbackText='', allowFallback=true, onEnded=null) {
     const src = cfg.voice[name];
-    if (!src) { fallbackSpeech(fallbackText); return; }
+    if (!src) { if (allowFallback) fallbackSpeech(fallbackText); return; }
     try {
       stopVoice();
       currentVoice = new Audio(src);
       currentVoice.volume = 1;
+      if (onEnded) currentVoice.addEventListener('ended', onEnded, { once: true });
       const playPromise = currentVoice.play();
-      if (playPromise && playPromise.catch) playPromise.catch(() => fallbackSpeech(fallbackText));
-    } catch(e) { fallbackSpeech(fallbackText); }
+      if (playPromise && playPromise.catch) playPromise.catch(() => { if (allowFallback) fallbackSpeech(fallbackText); });
+    } catch(e) { if (allowFallback) fallbackSpeech(fallbackText); }
   }
   function fallbackSpeech(text) { if (!text || !('speechSynthesis' in window)) return; speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.rate=.94; speechSynthesis.speak(u); }
   function stopVoice() { try { if (currentVoice) { currentVoice.pause(); currentVoice.currentTime = 0; } } catch(e) {} }
