@@ -40,7 +40,7 @@
   }
 
   function start() {
-    ['triesLeftDisplay','downloadStatusDisplay','soundStatusDisplay','playButton','soundToggle','speechToggle','visibleResult','downloadPanel','downloadTitle','downloadMessage','downloadLink','shareLink','liveRegion','assertiveRegion','instructions'].forEach(id => nodes[id] = $(id));
+    ['triesLeftDisplay','downloadStatusDisplay','soundStatusDisplay','playButton','soundToggle','speechToggle','visibleResult','downloadPanel','downloadTitle','downloadMessage','downloadLink','liveRegion','assertiveRegion','instructions'].forEach(id => nodes[id] = $(id));
     nodes.tiles = [0,1,2].map(i => $(`tile${i}`));
     load();
     state.busy = false;
@@ -53,7 +53,6 @@
     nodes.downloadLink.href = cfg.claimForm;
     nodes.downloadLink.target = '_blank';
     nodes.downloadLink.rel = 'noopener';
-    nodes.shareLink.href = location.href;
     nodes.playButton.onclick = handleMainButton;
     nodes.soundToggle.onclick = () => { state.sound = !state.sound; save(); draw(); say(state.sound ? 'Sound is on.' : 'Sound is off.'); };
     nodes.speechToggle.onclick = () => { state.speech = !state.speech; stopVoice(); stopPressPlayLoop(); if (!state.speech && 'speechSynthesis' in window) speechSynthesis.cancel(); save(); draw(); say(state.speech ? 'Game voice is on.' : 'Game voice is off. Screen reader text will still update.'); if (state.speech && state.started) startPressPlayLoop(1200); };
