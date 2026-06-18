@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CFLY Rewards Fresh Play Page</title>
+<style>
+body{margin:0;background:#111;color:#fff;font-family:Arial,sans-serif;line-height:1.5}.app-shell{width:min(100% - 2rem,900px);margin:auto;padding:2rem 0}.hero{text-align:center}.brand-logo{display:block;width:min(260px,80vw);height:auto;margin:0 auto 1rem}.edition{color:#ffd166;font-weight:800}.card{background:#1d1d1d;border:1px solid #444;border-radius:18px;padding:1rem;margin-top:1rem}.status,.tile-machine{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}.tile-machine{margin:2rem 0}.tile{min-height:8rem;display:flex;flex-direction:column;align-items:center;justify-content:center;border:3px solid #555;border-radius:18px;background:#101010;text-align:center}.tile-emoji{font-size:4rem}.tile-label{font-weight:800}.tile.moving .tile-emoji{animation:pulse .16s linear infinite}.primary-button,.secondary-button,.primary-link,.secondary-link{display:inline-flex;align-items:center;justify-content:center;min-height:3rem;padding:.8rem 1rem;border-radius:999px;font-weight:900;text-decoration:none}.primary-button,.primary-link{background:#ffd166;color:#111;border:0}.secondary-button,.secondary-link{background:#333;color:#fff;border:1px solid #666}.result-line{background:#2a2a2a;padding:1rem;border-radius:16px;font-weight:700}.download-panel{margin-top:1rem;border:2px solid #ffd166;background:#332b12;border-radius:18px;padding:1rem}.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}@keyframes pulse{from{transform:translateY(-5%)}to{transform:translateY(5%)}}@media(max-width:720px){.status,.tile-machine{grid-template-columns:1fr}.primary-button,.secondary-button,.primary-link,.secondary-link{width:100%;margin-top:.5rem}}
+</style>
+</head>
+<body>
+<main class="app-shell">
+<header class="hero"><img id="brandLogo" class="brand-logo" alt="CFLY logo"><p>Cazerny Bussey presents</p><h1>CFLY Rewards</h1><p class="edition">We In Here Edition</p><p>Tap play, match three tiles, and continue to the claim form.</p></header>
+<section class="status"><div class="card"><span>Tries left today</span><strong id="triesLeftDisplay">7</strong></div><div class="card"><span>Status</span><strong id="downloadStatusDisplay">Locked</strong></div><div class="card"><span>Sound</span><strong id="soundStatusDisplay">On</strong></div></section>
+<section class="card" id="gameArea"><h2>Play the CFLY fan unlock</h2><p id="instructions">Press Play. Match three special tiles to continue.</p><div class="tile-machine"><div class="tile" id="tile0"><span class="tile-emoji">🎤</span><span class="tile-label">Mic</span></div><div class="tile" id="tile1"><span class="tile-emoji">🎧</span><span class="tile-label">Music</span></div><div class="tile" id="tile2"><span class="tile-emoji">👑</span><span class="tile-label">Crown</span></div></div><button id="playButton" class="primary-button" type="button">Play</button> <button id="soundToggle" class="secondary-button" type="button">Turn Sound Off</button> <button id="speechToggle" class="secondary-button" type="button">Turn Game Voice Off</button><p class="result-line" id="visibleResult" tabindex="-1">Ready. Press Play when you are ready.</p><div class="download-panel" id="downloadPanel" hidden><h3 id="downloadTitle">CFLY!</h3><p id="downloadMessage">Continue to claim.</p><a id="downloadLink" class="primary-link" href="#">Claim</a> <a id="shareLink" class="secondary-link" href="#" target="_blank" rel="noopener">Share</a></div></section>
+<section class="card"><h2>Accessibility built in</h2><p>Keyboard play, screen reader announcements, reduced motion support, and spoken updates are included.</p></section><section class="card"><h2>Recent plays</h2><ol id="playHistory"></ol></section><footer><p>CFLY means Cazerny Forever Loves You.</p></footer>
+</main>
+<div class="sr-only" id="liveRegion" aria-live="polite" aria-atomic="true"></div><div class="sr-only" id="assertiveRegion" aria-live="assertive" aria-atomic="true"></div>
+<script>fetch('./assets/images/cfly-logo-data-uri.txt?v=8').then(r=>r.text()).then(src=>{const logo=document.getElementById('brandLogo');if(logo)logo.src=src.trim();}).catch(()=>{});</script>
+<script src="./app.js?v=8"></script>
+</body>
+</html>
