@@ -1,6 +1,6 @@
 (() => {
   const cfg = {
-    key: 'cfly-rewards-we-in-here-2026-06-v5',
+    key: 'cfly-rewards-we-in-here-2026-06-v6',
     max: 7,
     tileVoiceFallbackMs: 3600,
     remindEvery: 6500,
@@ -81,7 +81,7 @@
       tone('high');
       openPanel();
       updateLive('CFLY! You matched three. Enter your email to claim your reward.', true);
-      playClip('rewardUnlocked', 'CFLY! You matched three. Enter your email to claim your reward.', true, () => setTimeout(() => playClip('cflyTag'), 250));
+      playClip('rewardUnlocked', 'CFLY! You matched three. Enter your email to claim your reward.', true, () => setTimeout(() => playClip('cflyTag'), 1800));
     } else {
       result(`Not this time. Run it back. You have ${left()} ${left() === 1 ? 'play' : 'plays'} left today.`);
       tone('low');
