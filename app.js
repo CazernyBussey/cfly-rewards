@@ -1,6 +1,6 @@
 (() => {
   const cfg = {
-    key: 'cfly-rewards-we-in-here-2026-06-v6',
+    key: 'cfly-rewards-we-in-here-2026-06-v7',
     max: 7,
     tileVoiceFallbackMs: 3600,
     remindEvery: 6500,
@@ -153,7 +153,7 @@
   function fallbackSpeech(text) { if (!text || !('speechSynthesis' in window)) return; speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.rate=.94; speechSynthesis.speak(u); }
   function stopVoice() { try { if (currentVoice) { currentVoice.pause(); currentVoice.currentTime = 0; } } catch(e) {} }
   function tone(kind) { if (!state.sound) return; try { const C = window.AudioContext || window.webkitAudioContext; if (!C) return; audioCtx = audioCtx || new C(); if (audioCtx.state === 'suspended') audioCtx.resume(); const now = audioCtx.currentTime, g = audioCtx.createGain(), o = audioCtx.createOscillator(); const map = { start:[180,.16,.07], tick:[520,.08,.06], high:[880,.42,.09], low:[170,.18,.05] }; const [f,d,v] = map[kind] || map.tick; o.type = kind === 'high' ? 'triangle' : 'sine'; o.frequency.setValueAtTime(f, now); g.gain.setValueAtTime(.0001, now); g.gain.exponentialRampToValueAtTime(v, now+.02); g.gain.exponentialRampToValueAtTime(.0001, now+d); o.connect(g); g.connect(audioCtx.destination); o.start(now); o.stop(now+d+.02); } catch(e) {} }
-  function load() { try { const raw = localStorage.getItem(cfg.key); const saved = raw && JSON.parse(raw); if (saved && saved.day === state.day) state = { ...state, ...saved }; } catch(e) {} }
+  function load() { try { const raw = localStorage.getItem(cfg.key); const saved = raw && JSON.parse(raw); if (saved && saved.day === state.day) state = { ...state, ...saved, sound: true, speech: true }; } catch(e) {} }
   function save() { try { localStorage.setItem(cfg.key, JSON.stringify(state)); } catch(e) {} }
   function left() { return Math.max(0, cfg.max - state.used); }
   function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
